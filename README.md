@@ -39,3 +39,20 @@ Sistema desenvolvido em Laravel, Vue.js e Inertia para gestão de investimentos.
 # Iniciar servidor de desenvolvimento
 composer run dev
 ```
+
+## Melhorias Futuras
+
+### Redis para Sessões
+
+Para melhorar a performance e escalabilidade da aplicação, recomenda-se migrar o armazenamento de sessões do banco de dados (MySQL) para Redis. Esta estratégia oferece:
+
+- **Melhor Performance:** Redis é muito mais rápido que consultas ao banco de dados
+- **Redução de Carga:** Diminui a carga no MySQL, liberando recursos para operações críticas
+- **Escalabilidade:** Permite compartilhar sessões entre múltiplos servidores
+- **TTL Automático:** Expiração automática de sessões sem necessidade de limpeza manual
+
+Para implementar, basta configurar no `.env`:
+```
+SESSION_DRIVER=redis
+CACHE_STORE=redis
+```

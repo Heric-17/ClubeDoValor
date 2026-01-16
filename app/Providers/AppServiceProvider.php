@@ -2,27 +2,24 @@
 
 namespace App\Providers;
 
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
-
-
-    public function boot(): void
+    /**
+     * Register any application services.
+     */
+    public function register(): void
     {
-        $this->configureDefaults();
+        //
     }
 
-    protected function configureDefaults(): void
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
     {
-        Date::use(CarbonImmutable::class);
-
-        DB::prohibitDestructiveCommands(
-            app()->isProduction(),
-        );
+        Vite::prefetch(concurrency: 3);
     }
 }
