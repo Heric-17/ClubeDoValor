@@ -1,15 +1,16 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import Modal from '@/Components/Modal.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import SecondaryButton from '@/Components/SecondaryButton.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import TextInput from '@/Components/TextInput.vue';
-import InputError from '@/Components/InputError.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, watch } from 'vue';
 
-const props = defineProps({
+import InputError from '@/components/InputError.vue';
+import InputLabel from '@/components/InputLabel.vue';
+import Modal from '@/components/Modal.vue';
+import PrimaryButton from '@/components/PrimaryButton.vue';
+import SecondaryButton from '@/components/SecondaryButton.vue';
+import TextInput from '@/components/TextInput.vue';
+import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
+
+defineProps({
     investments: {
         type: Object,
         required: true,
@@ -38,6 +39,41 @@ const form = useForm({
     investment_date: new Date().toISOString().split('T')[0],
 });
 
+const amountDisplay = ref('');
+
+const applyCurrencyMask = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    
+    if (!numbers) return '';
+    
+    const amount = parseFloat(numbers) / 100;
+    
+    return new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    }).format(amount);
+};
+
+const removeCurrencyMask = (value) => {
+    if (!value) return '';
+    const numbers = value.replace(/\D/g, '');
+    return (parseFloat(numbers) / 100).toString();
+};
+
+const handleAmountInput = (event) => {
+    const value = event.target.value;
+    amountDisplay.value = applyCurrencyMask(value);
+    form.amount = removeCurrencyMask(value);
+};
+
+watch(() => form.amount, (newValue) => {
+    if (!newValue || newValue === '') {
+        amountDisplay.value = '';
+    } else if (newValue !== removeCurrencyMask(amountDisplay.value)) {
+        amountDisplay.value = applyCurrencyMask(newValue);
+    }
+});
+
 const formatCurrency = (value) => {
     return new Intl.NumberFormat('pt-BR', {
         style: 'currency',
@@ -58,6 +94,7 @@ const submit = () => {
         preserveScroll: true,
         onSuccess: () => {
             form.reset();
+            amountDisplay.value = '';
             showModal.value = false;
         },
     });
@@ -67,6 +104,7 @@ const closeModal = () => {
     showModal.value = false;
     form.reset();
     form.clearErrors();
+    amountDisplay.value = '';
 };
 </script>
 
@@ -87,7 +125,6 @@ const closeModal = () => {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <!-- Stats Cards -->
                 <div class="mb-6 grid gap-6 md:grid-cols-2">
                     <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div class="p-6">
@@ -112,7 +149,6 @@ const closeModal = () => {
                     </div>
                 </div>
 
-                <!-- Investments Table -->
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6">
                         <div class="overflow-x-auto">
@@ -180,7 +216,6 @@ const closeModal = () => {
                             </table>
                         </div>
 
-                        <!-- Pagination -->
                         <div
                             v-if="investments.links.length > 3"
                             class="mt-4 flex items-center justify-between"
@@ -207,8 +242,9 @@ const closeModal = () => {
                                             'bg-white text-gray-700 hover:bg-gray-50': !link.active,
                                         }"
                                         class="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium"
-                                        v-html="link.label"
-                                    />
+                                    >
+                                        <span v-html="link.label" />
+                                    </Link>
                                     <span
                                         v-else
                                         :class="{
@@ -225,7 +261,6 @@ const closeModal = () => {
             </div>
         </div>
 
-        <!-- Modal -->
         <Modal :show="showModal" @close="closeModal">
             <div class="p-6">
                 <h2 class="text-lg font-medium text-gray-900">
@@ -233,7 +268,6 @@ const closeModal = () => {
                 </h2>
 
                 <form @submit.prevent="submit" class="mt-6 space-y-6">
-                    <!-- Cliente -->
                     <div>
                         <InputLabel for="client_id" value="Cliente" />
                         <select
@@ -257,7 +291,6 @@ const closeModal = () => {
                         />
                     </div>
 
-                    <!-- Ativo -->
                     <div>
                         <InputLabel for="asset_id" value="Ativo" />
                         <select
@@ -281,16 +314,16 @@ const closeModal = () => {
                         />
                     </div>
 
-                    <!-- Valor -->
                     <div>
                         <InputLabel for="amount" value="Valor (R$)" />
-                        <TextInput
+                        <input
                             id="amount"
-                            v-model="form.amount"
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            class="mt-1 block w-full"
+                            :value="amountDisplay"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="0,00"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            @input="handleAmountInput"
                             required
                         />
                         <InputError
@@ -299,7 +332,6 @@ const closeModal = () => {
                         />
                     </div>
 
-                    <!-- Data -->
                     <div>
                         <InputLabel for="investment_date" value="Data do Investimento" />
                         <TextInput
@@ -315,12 +347,10 @@ const closeModal = () => {
                         />
                     </div>
 
-                    <!-- Error geral -->
                     <div v-if="form.errors.investment">
                         <InputError :message="form.errors.investment" />
                     </div>
 
-                    <!-- Success message -->
                     <div
                         v-if="page.props.flash?.success"
                         class="rounded-md bg-green-50 p-4"
@@ -330,7 +360,6 @@ const closeModal = () => {
                         </p>
                     </div>
 
-                    <!-- Actions -->
                     <div class="flex justify-end space-x-3">
                         <SecondaryButton type="button" @click="closeModal">
                             Cancelar
