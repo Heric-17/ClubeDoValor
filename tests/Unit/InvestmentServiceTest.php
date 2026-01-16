@@ -81,7 +81,7 @@ class InvestmentServiceTest extends TestCase
         ];
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('O valor do investimento não pode ser negativo.');
+        $this->expectExceptionMessage('O valor do investimento deve ser no mínimo R$ 1,00.');
 
         $service->createInvestment($data);
     }

@@ -102,6 +102,7 @@ class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
         return [
             'total_current_month' => (float) $totalCurrentMonth,
             'top_asset' => $topAsset?->symbol ?? null,
+            'top_asset_amount' => $topAsset ? (float) $topAsset->total_amount : null,
         ];
     }
 }

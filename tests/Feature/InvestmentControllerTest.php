@@ -196,6 +196,7 @@ class InvestmentControllerTest extends TestCase
             ->component('Investments/Index')
             ->where('stats.total_current_month', 3500)
             ->where('stats.top_asset', 'PETR4')
+            ->where('stats.top_asset_amount', 3000)
         );
     }
 
@@ -212,6 +213,7 @@ class InvestmentControllerTest extends TestCase
             ->component('Investments/Index')
             ->where('stats.total_current_month', 0)
             ->where('stats.top_asset', null)
+            ->where('stats.top_asset_amount', null)
         );
     }
 
@@ -297,6 +299,7 @@ class InvestmentControllerTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->component('Investments/Index')
             ->where('stats.top_asset', 'VALE3')
+            ->where('stats.top_asset_amount', 3000)
         );
     }
 

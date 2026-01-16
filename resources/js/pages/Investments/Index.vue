@@ -262,6 +262,9 @@ const filterByClient = () => {
                             <div class="mt-2 text-3xl font-bold text-gray-900">
                                 {{ stats.top_asset || 'N/A' }}
                             </div>
+                            <div v-if="stats.top_asset_amount" class="mt-1 text-sm text-gray-600">
+                                {{ formatCurrency(stats.top_asset_amount) }} alocado
+                            </div>
                         </div>
                     </div>
                 </div>
