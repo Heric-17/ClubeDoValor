@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\Investment;
 use App\Repositories\InvestmentRepositoryInterface;
 use App\Services\InvestmentService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Mockery;
 use PHPUnit\Framework\TestCase;
 
@@ -83,5 +84,41 @@ class InvestmentServiceTest extends TestCase
         $this->expectExceptionMessage('O valor do investimento não pode ser negativo.');
 
         $service->createInvestment($data);
+    }
+
+    public function test_deve_retornar_investimentos_do_usuario_paginados(): void
+    {
+        $repositoryMock = Mockery::mock(InvestmentRepositoryInterface::class);
+        $service = new InvestmentService($repositoryMock);
+
+        $paginatorMock = Mockery::mock(LengthAwarePaginator::class);
+
+        $repositoryMock
+            ->shouldReceive('getByUserId')
+            ->once()
+            ->with(1, 15)
+            ->andReturn($paginatorMock);
+
+        $result = $service->getInvestmentsByUser(1);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
+    }
+
+    public function test_deve_retornar_investimentos_do_usuario_com_per_page_customizado(): void
+    {
+        $repositoryMock = Mockery::mock(InvestmentRepositoryInterface::class);
+        $service = new InvestmentService($repositoryMock);
+
+        $paginatorMock = Mockery::mock(LengthAwarePaginator::class);
+
+        $repositoryMock
+            ->shouldReceive('getByUserId')
+            ->once()
+            ->with(1, 20)
+            ->andReturn($paginatorMock);
+
+        $result = $service->getInvestmentsByUser(1, 20);
+
+        $this->assertInstanceOf(LengthAwarePaginator::class, $result);
     }
 }
