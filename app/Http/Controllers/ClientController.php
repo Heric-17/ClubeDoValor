@@ -21,7 +21,7 @@ class ClientController extends Controller
     public function index(): Response
     {
         /** @var User $user */
-        $user = Auth::user(); // index não recebe Request, então mantém Auth::user()
+        $user = Auth::user();
 
         $clients = $this->clientService->getClientsByUser($user->id);
 
