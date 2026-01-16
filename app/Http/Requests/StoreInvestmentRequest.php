@@ -24,7 +24,7 @@ class StoreInvestmentRequest extends FormRequest
     {
         return [
             'asset_id' => ['required', 'exists:assets,id'],
-            'amount' => ['required', 'numeric', 'min:0'],
+            'amount' => ['required', 'numeric', 'min:1'],
             'investment_date' => ['required', 'date', 'before_or_equal:today'],
             'client_id' => [
                 'required',

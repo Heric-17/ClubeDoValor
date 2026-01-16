@@ -15,9 +15,9 @@ class InvestmentService
 
     public function createInvestment(array $data): Investment
     {
-        // Regra 1: Validar se o valor é positivo
-        if (($data['amount'] ?? 0) < 0) {
-            throw new \InvalidArgumentException('O valor do investimento não pode ser negativo.');
+        // Regra 1: Validar se o valor é no mínimo R$ 1,00
+        if (($data['amount'] ?? 0) < 1) {
+            throw new \InvalidArgumentException('O valor do investimento deve ser no mínimo R$ 1,00.');
         }
 
         // Regra 2: Validar se a data não é futura
@@ -41,9 +41,9 @@ class InvestmentService
 
     public function updateInvestment(int $id, array $data): Investment
     {
-        // Regra 1: Validar se o valor é positivo
-        if (isset($data['amount']) && $data['amount'] < 0) {
-            throw new \InvalidArgumentException('O valor do investimento não pode ser negativo.');
+        // Regra 1: Validar se o valor é no mínimo R$ 1,00
+        if (isset($data['amount']) && $data['amount'] < 1) {
+            throw new \InvalidArgumentException('O valor do investimento deve ser no mínimo R$ 1,00.');
         }
 
         // Regra 2: Validar se a data não é futura
