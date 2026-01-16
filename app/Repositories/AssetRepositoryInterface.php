@@ -2,7 +2,6 @@
 
 namespace App\Repositories;
 
-use App\Models\Asset;
 use Illuminate\Database\Eloquent\Collection;
 
 interface AssetRepositoryInterface

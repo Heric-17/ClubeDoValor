@@ -21,14 +21,14 @@ class UserInvestmentsRelationshipTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         /** @var Investment $investment1 */
         $investment1 = Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset->id,
             'amount' => 1000.00,
         ]);
-        
+
         /** @var Investment $investment2 */
         $investment2 = Investment::factory()->create([
             'client_id' => $client->id,
@@ -49,21 +49,21 @@ class UserInvestmentsRelationshipTest extends TestCase
         $user1 = User::factory()->create();
         /** @var User $user2 */
         $user2 = User::factory()->create();
-        
+
         /** @var Client $client1 */
         $client1 = Client::factory()->create(['user_id' => $user1->id]);
         /** @var Client $client2 */
         $client2 = Client::factory()->create(['user_id' => $user2->id]);
-        
+
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         /** @var Investment $investment1 */
         Investment::factory()->create([
             'client_id' => $client1->id,
             'asset_id' => $asset->id,
         ]);
-        
+
         /** @var Investment $investment2 */
         Investment::factory()->create([
             'client_id' => $client2->id,
@@ -84,7 +84,7 @@ class UserInvestmentsRelationshipTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create(['symbol' => 'PETR4']);
-        
+
         /** @var Investment $investment */
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -109,7 +109,7 @@ class UserInvestmentsRelationshipTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         /** @var Investment $investment */
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -132,7 +132,7 @@ class UserInvestmentsRelationshipTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         /** @var Investment $investment1 */
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -140,7 +140,7 @@ class UserInvestmentsRelationshipTest extends TestCase
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         /** @var Investment $investment2 */
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -166,13 +166,13 @@ class UserInvestmentsRelationshipTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset->id,
             'amount' => 1000.00,
         ]);
-        
+
         Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset->id,

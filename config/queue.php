@@ -2,7 +2,6 @@
 
 return [
 
-
     'default' => env('QUEUE_CONNECTION', 'database'),
 
     'connections' => [

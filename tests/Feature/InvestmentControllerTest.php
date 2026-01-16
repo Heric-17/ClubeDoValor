@@ -120,15 +120,15 @@ class InvestmentControllerTest extends TestCase
         $user1 = User::factory()->create();
         /** @var User $user2 */
         $user2 = User::factory()->create();
-        
+
         /** @var Client $client1 */
         $client1 = Client::factory()->create(['user_id' => $user1->id]);
         /** @var Client $client2 */
         $client2 = Client::factory()->create(['user_id' => $user2->id]);
-        
+
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         /** @var Investment $investment1 */
         Investment::factory()->create([
             'client_id' => $client1->id,
@@ -136,7 +136,7 @@ class InvestmentControllerTest extends TestCase
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         /** @var Investment $investment2 */
         Investment::factory()->create([
             'client_id' => $client2->id,
@@ -165,7 +165,7 @@ class InvestmentControllerTest extends TestCase
         $asset1 = Asset::factory()->create(['symbol' => 'PETR4']);
         /** @var Asset $asset2 */
         $asset2 = Asset::factory()->create(['symbol' => 'VALE3']);
-        
+
         // Investimentos do mês atual
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -173,14 +173,14 @@ class InvestmentControllerTest extends TestCase
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset1->id,
             'amount' => 2000.00,
             'investment_date' => now(),
         ]);
-        
+
         // Investimento em outro ativo (menor valor total)
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -223,7 +223,7 @@ class InvestmentControllerTest extends TestCase
         $client1 = Client::factory()->create(['user_id' => $user->id, 'name' => 'Cliente A']);
         /** @var Client $client2 */
         $client2 = Client::factory()->create(['user_id' => $user->id, 'name' => 'Cliente B']);
-        
+
         // Cliente de outro usuário não deve aparecer
         /** @var User $otherUser */
         $otherUser = User::factory()->create();
@@ -268,7 +268,7 @@ class InvestmentControllerTest extends TestCase
         $asset1 = Asset::factory()->create(['symbol' => 'PETR4']);
         /** @var Asset $asset2 */
         $asset2 = Asset::factory()->create(['symbol' => 'VALE3']);
-        
+
         // VALE3 tem maior valor total (3000 vs 2000)
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -276,14 +276,14 @@ class InvestmentControllerTest extends TestCase
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset1->id,
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         Investment::factory()->create([
             'client_id' => $client->id,
             'asset_id' => $asset2->id,
@@ -308,7 +308,7 @@ class InvestmentControllerTest extends TestCase
         $client = Client::factory()->create(['user_id' => $user->id]);
         /** @var Asset $asset */
         $asset = Asset::factory()->create();
-        
+
         // Investimento do mês atual
         Investment::factory()->create([
             'client_id' => $client->id,
@@ -316,7 +316,7 @@ class InvestmentControllerTest extends TestCase
             'amount' => 1000.00,
             'investment_date' => now(),
         ]);
-        
+
         // Investimento do mês anterior
         Investment::factory()->create([
             'client_id' => $client->id,

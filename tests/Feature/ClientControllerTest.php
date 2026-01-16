@@ -44,21 +44,21 @@ class ClientControllerTest extends TestCase
     {
         /** @var User $user */
         $user = User::factory()->create();
-        
+
         /** @var Client $client1 */
         Client::factory()->create([
             'user_id' => $user->id,
             'name' => 'Zeca Silva',
             'email' => 'zeca@example.com',
         ]);
-        
+
         /** @var Client $client2 */
         Client::factory()->create([
             'user_id' => $user->id,
             'name' => 'Ana Costa',
             'email' => 'ana@example.com',
         ]);
-        
+
         /** @var Client $client3 */
         Client::factory()->create([
             'user_id' => $user->id,
@@ -84,14 +84,14 @@ class ClientControllerTest extends TestCase
         $user1 = User::factory()->create();
         /** @var User $user2 */
         $user2 = User::factory()->create();
-        
+
         /** @var Client $client1 */
         Client::factory()->create([
             'user_id' => $user1->id,
             'name' => 'Cliente User 1',
             'email' => 'cliente1@example.com',
         ]);
-        
+
         /** @var Client $client2 */
         Client::factory()->create([
             'user_id' => $user2->id,
@@ -248,7 +248,7 @@ class ClientControllerTest extends TestCase
             ->actingAs($user)
             ->post('/clients', [
                 'name' => 'João Silva',
-                'email' => str_repeat('a', 250) . '@example.com',
+                'email' => str_repeat('a', 250).'@example.com',
             ]);
 
         $response->assertSessionHasErrors('email');
