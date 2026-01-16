@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Investment;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 interface InvestmentRepositoryInterface
@@ -14,4 +15,6 @@ interface InvestmentRepositoryInterface
     public function delete(int $id): bool;
 
     public function findByClient(int $clientId): Collection;
+
+    public function getByUserId(int $userId, int $perPage = 15): LengthAwarePaginator;
 }

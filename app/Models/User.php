@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -33,5 +34,10 @@ class User extends Authenticatable
     public function clients(): HasMany
     {
         return $this->hasMany(Client::class);
+    }
+
+    public function investments(): HasManyThrough
+    {
+        return $this->hasManyThrough(Investment::class, Client::class);
     }
 }

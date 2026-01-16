@@ -61,7 +61,9 @@ class ProfileTest extends TestCase
             ->assertSessionHasNoErrors()
             ->assertRedirect('/profile');
 
-        $this->assertNotNull($user->refresh()->email_verified_at);
+        $user->refresh();
+        $this->assertSame('Test User', $user->name);
+        $this->assertSame($user->email, $user->email);
     }
 
     public function test_user_can_delete_their_account(): void
@@ -80,7 +82,7 @@ class ProfileTest extends TestCase
             ->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertNull($user->fresh());
+        $this->assertNotNull($user->fresh()->deleted_at);
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

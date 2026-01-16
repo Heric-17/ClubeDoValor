@@ -3,6 +3,8 @@
 namespace App\Repositories;
 
 use App\Models\Investment;
+use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
@@ -33,5 +35,16 @@ class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
         return $this->model->newQuery()
             ->where('client_id', $clientId)
             ->get();
+    }
+
+    public function getByUserId(int $userId, int $perPage = 15): LengthAwarePaginator
+    {
+        $user = User::findOrFail($userId);
+
+        return $user->investments()
+            ->with(['client', 'asset'])
+            ->orderBy('investment_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
     }
 }
