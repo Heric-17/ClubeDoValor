@@ -3,7 +3,6 @@
 namespace App\Repositories;
 
 use App\Models\Investment;
-use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -23,6 +22,19 @@ class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
         return $this->model->create($data);
     }
 
+    public function findById(int $id): Investment
+    {
+        return $this->model->findOrFail($id);
+    }
+
+    public function update(int $id, array $data): Investment
+    {
+        $investment = $this->model->findOrFail($id);
+        $investment->update($data);
+
+        return $investment->fresh();
+    }
+
     public function delete(int $id): bool
     {
         $investment = $this->model->findOrFail($id);
@@ -39,18 +51,57 @@ class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
 
     public function getByUserId(int $userId, int $perPage = 15, ?int $clientId = null): LengthAwarePaginator
     {
-        $user = User::findOrFail($userId);
-
-        $query = $user->investments()
-            ->with(['client', 'asset']);
+        $query = $this->model->newQuery()
+            ->join('clients', 'investments.client_id', '=', 'clients.id')
+            ->where('clients.user_id', $userId)
+            ->whereNull('clients.deleted_at')
+            ->with(['client', 'asset'])
+            ->select('investments.*');
 
         if ($clientId !== null) {
-            $query->where('client_id', $clientId);
+            $query->where('investments.client_id', $clientId);
         }
 
         return $query
-            ->orderBy('investment_date', 'desc')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('investments.investment_date', 'desc')
+            ->orderBy('investments.created_at', 'desc')
             ->paginate($perPage);
+    }
+
+    public function getStats(int $userId, ?int $clientId = null): array
+    {
+        $totalCurrentMonthQuery = $this->model->newQuery()
+            ->join('clients', 'investments.client_id', '=', 'clients.id')
+            ->where('clients.user_id', $userId)
+            ->whereNull('clients.deleted_at')
+            ->whereYear('investments.investment_date', now()->year)
+            ->whereMonth('investments.investment_date', now()->month);
+
+        if ($clientId !== null) {
+            $totalCurrentMonthQuery->where('investments.client_id', $clientId);
+        }
+
+        $totalCurrentMonth = $totalCurrentMonthQuery->sum('investments.amount');
+
+        $topAssetQuery = $this->model->newQuery()
+            ->join('clients', 'investments.client_id', '=', 'clients.id')
+            ->join('assets', 'investments.asset_id', '=', 'assets.id')
+            ->where('clients.user_id', $userId)
+            ->whereNull('clients.deleted_at');
+
+        if ($clientId !== null) {
+            $topAssetQuery->where('investments.client_id', $clientId);
+        }
+
+        $topAsset = $topAssetQuery
+            ->selectRaw('assets.symbol, SUM(investments.amount) as total_amount')
+            ->groupBy('assets.id', 'assets.symbol')
+            ->orderByDesc('total_amount')
+            ->first();
+
+        return [
+            'total_current_month' => (float) $totalCurrentMonth,
+            'top_asset' => $topAsset?->symbol ?? null,
+        ];
     }
 }

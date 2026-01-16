@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreInvestmentRequest;
-use App\Models\Asset;
-use App\Models\Client;
+use App\Http\Requests\UpdateInvestmentRequest;
+use App\Models\Investment;
 use App\Models\User;
+use App\Services\AssetService;
+use App\Services\ClientService;
 use App\Services\InvestmentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +17,9 @@ use Inertia\Response;
 class InvestmentController extends Controller
 {
     public function __construct(
-        private readonly InvestmentService $investmentService
+        private readonly InvestmentService $investmentService,
+        private readonly ClientService $clientService,
+        private readonly AssetService $assetService
     ) {}
 
     public function index(): Response
@@ -23,25 +27,17 @@ class InvestmentController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $clientId = request()->query('client');
-
-        $clientIdInt = $clientId ? (int) $clientId : null;
+        $clientId = request()->integer('client') ?: null;
 
         $investments = $this->investmentService->getInvestmentsByUser(
             $user->id,
             15,
-            $clientIdInt
+            $clientId
         );
-        $stats = $this->investmentService->getInvestmentStats($user->id, $clientIdInt);
+        $stats = $this->investmentService->getInvestmentStats($user->id, $clientId);
 
-        $clients = Client::where('user_id', $user->id)
-            ->select('id', 'name')
-            ->orderBy('name')
-            ->get();
-
-        $assets = Asset::select('id', 'symbol', 'name')
-            ->orderBy('symbol')
-            ->get();
+        $clients = $this->clientService->getClientsForSelect($user->id);
+        $assets = $this->assetService->getAssetsForSelect();
 
         return Inertia::render('Investments/Index', [
             'investments' => $investments,
@@ -49,7 +45,7 @@ class InvestmentController extends Controller
             'assets' => $assets,
             'stats' => $stats,
             'filters' => [
-                'client' => $clientId,
+                'client' => $clientId ? (string) $clientId : null,
             ],
         ]);
     }
@@ -64,6 +60,48 @@ class InvestmentController extends Controller
             return back()->withErrors(['investment' => $e->getMessage()]);
         } catch (\Exception $e) {
             return back()->withErrors(['investment' => 'Erro ao criar investimento. Tente novamente.']);
+        }
+    }
+
+    public function update(UpdateInvestmentRequest $request, Investment $investment): RedirectResponse
+    {
+        try {
+            /** @var User $user */
+            $user = $request->user();
+
+            $client = $this->clientService->getClientById($investment->client_id);
+
+            if ($client->user_id !== $user->id) {
+                return back()->withErrors(['investment' => 'Você não tem permissão para editar este investimento.']);
+            }
+
+            $this->investmentService->updateInvestment($investment->id, $request->validated());
+
+            return redirect()->back()->with('success', 'Investimento atualizado com sucesso!');
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['investment' => $e->getMessage()]);
+        } catch (\Exception $e) {
+            return back()->withErrors(['investment' => 'Erro ao atualizar investimento. Tente novamente.']);
+        }
+    }
+
+    public function destroy(Investment $investment): RedirectResponse
+    {
+        try {
+            /** @var User $user */
+            $user = Auth::user();
+
+            $client = $this->clientService->getClientById($investment->client_id);
+
+            if ($client->user_id !== $user->id) {
+                return back()->withErrors(['investment' => 'Você não tem permissão para excluir este investimento.']);
+            }
+
+            $this->investmentService->deleteInvestment($investment->id);
+
+            return redirect()->back()->with('success', 'Investimento excluído com sucesso!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['investment' => 'Erro ao excluir investimento. Tente novamente.']);
         }
     }
 }

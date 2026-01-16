@@ -2,6 +2,7 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
+import DangerButton from '@/components/DangerButton.vue';
 import InputError from '@/components/InputError.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import Modal from '@/components/Modal.vue';
@@ -37,6 +38,10 @@ const selectedClient = ref(props.filters.client || '');
 
 const page = usePage();
 const showModal = ref(false);
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
+const editingInvestment = ref(null);
+const deletingInvestment = ref(null);
 
 const form = useForm({
     client_id: '',
@@ -45,7 +50,15 @@ const form = useForm({
     investment_date: new Date().toISOString().split('T')[0],
 });
 
+const editForm = useForm({
+    client_id: '',
+    asset_id: '',
+    amount: '',
+    investment_date: '',
+});
+
 const amountDisplay = ref('');
+const editAmountDisplay = ref('');
 
 const applyCurrencyMask = (value) => {
     const numbers = value.replace(/\D/g, '');
@@ -112,6 +125,70 @@ const closeModal = () => {
     form.clearErrors();
     amountDisplay.value = '';
 };
+
+const openEditModal = (investment) => {
+    editingInvestment.value = investment;
+    editForm.client_id = investment.client_id.toString();
+    editForm.asset_id = investment.asset_id.toString();
+    editForm.amount = investment.amount.toString();
+    editForm.investment_date = investment.investment_date;
+    editAmountDisplay.value = applyCurrencyMask(investment.amount.toString());
+    showEditModal.value = true;
+};
+
+const submitEdit = () => {
+    editForm.put(route('investments.update', editingInvestment.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            editForm.reset();
+            editAmountDisplay.value = '';
+            showEditModal.value = false;
+            editingInvestment.value = null;
+        },
+    });
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editForm.reset();
+    editForm.clearErrors();
+    editAmountDisplay.value = '';
+    editingInvestment.value = null;
+};
+
+const openDeleteModal = (investment) => {
+    deletingInvestment.value = investment;
+    showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+    router.delete(route('investments.destroy', deletingInvestment.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            deletingInvestment.value = null;
+        },
+    });
+};
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    deletingInvestment.value = null;
+};
+
+const handleEditAmountInput = (event) => {
+    const value = event.target.value;
+    editAmountDisplay.value = applyCurrencyMask(value);
+    editForm.amount = removeCurrencyMask(value);
+};
+
+watch(() => editForm.amount, (newValue) => {
+    if (!newValue || newValue === '') {
+        editAmountDisplay.value = '';
+    } else if (newValue !== removeCurrencyMask(editAmountDisplay.value)) {
+        editAmountDisplay.value = applyCurrencyMask(newValue);
+    }
+});
 
 const filterByClient = () => {
     router.get(route('investments.index'), {
@@ -220,12 +297,17 @@ const filterByClient = () => {
                                         >
                                             Valor
                                         </th>
+                                        <th
+                                            class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+                                        >
+                                            Ações
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 bg-white">
                                     <tr v-if="investments.data.length === 0">
                                         <td
-                                            colspan="5"
+                                            colspan="6"
                                             class="px-6 py-4 text-center text-sm text-gray-500"
                                         >
                                             Nenhum investimento encontrado.
@@ -250,6 +332,20 @@ const filterByClient = () => {
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
                                             {{ formatCurrency(investment.amount) }}
+                                        </td>
+                                        <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                            <button
+                                                @click="openEditModal(investment)"
+                                                class="text-indigo-600 hover:text-indigo-900 mr-3"
+                                            >
+                                                Editar
+                                            </button>
+                                            <button
+                                                @click="openDeleteModal(investment)"
+                                                class="text-red-600 hover:text-red-900"
+                                            >
+                                                Excluir
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -412,6 +508,150 @@ const filterByClient = () => {
                         </PrimaryButton>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <Modal :show="showEditModal" @close="closeEditModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Editar Aporte
+                </h2>
+
+                <form @submit.prevent="submitEdit" class="mt-6 space-y-6">
+                    <div>
+                        <InputLabel for="edit_client_id" value="Cliente" />
+                        <select
+                            id="edit_client_id"
+                            v-model="editForm.client_id"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            required
+                        >
+                            <option value="">Selecione um cliente</option>
+                            <option
+                                v-for="client in clients"
+                                :key="client.id"
+                                :value="client.id"
+                            >
+                                {{ client.name }}
+                            </option>
+                        </select>
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.client_id"
+                        />
+                    </div>
+
+                    <div>
+                        <InputLabel for="edit_asset_id" value="Ativo" />
+                        <select
+                            id="edit_asset_id"
+                            v-model="editForm.asset_id"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            required
+                        >
+                            <option value="">Selecione um ativo</option>
+                            <option
+                                v-for="asset in assets"
+                                :key="asset.id"
+                                :value="asset.id"
+                            >
+                                {{ asset.symbol }} - {{ asset.name }}
+                            </option>
+                        </select>
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.asset_id"
+                        />
+                    </div>
+
+                    <div>
+                        <InputLabel for="edit_amount" value="Valor (R$)" />
+                        <input
+                            id="edit_amount"
+                            :value="editAmountDisplay"
+                            @input="handleEditAmountInput"
+                            type="text"
+                            inputmode="numeric"
+                            placeholder="0,00"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                            required
+                        />
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.amount"
+                        />
+                    </div>
+
+                    <div>
+                        <InputLabel for="edit_investment_date" value="Data do Investimento" />
+                        <TextInput
+                            id="edit_investment_date"
+                            v-model="editForm.investment_date"
+                            type="date"
+                            class="mt-1 block w-full"
+                            required
+                        />
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.investment_date"
+                        />
+                    </div>
+
+                    <div v-if="editForm.errors.investment">
+                        <InputError :message="editForm.errors.investment" />
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <SecondaryButton type="button" @click="closeEditModal">
+                            Cancelar
+                        </SecondaryButton>
+                        <PrimaryButton
+                            type="submit"
+                            :disabled="editForm.processing"
+                        >
+                            {{ editForm.processing ? 'Salvando...' : 'Salvar' }}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <Modal :show="showDeleteModal" @close="closeDeleteModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Excluir Aporte
+                </h2>
+
+                <p class="mt-4 text-sm text-gray-600">
+                    Tem certeza que deseja excluir este aporte? Esta ação não pode ser desfeita.
+                </p>
+
+                <div v-if="deletingInvestment" class="mt-4 rounded-md bg-gray-50 p-4">
+                    <p class="text-sm text-gray-900">
+                        <strong>Cliente:</strong> {{ deletingInvestment.client.name }}
+                    </p>
+                    <p class="text-sm text-gray-900">
+                        <strong>Ativo:</strong> {{ deletingInvestment.asset.symbol }}
+                    </p>
+                    <p class="text-sm text-gray-900">
+                        <strong>Valor:</strong> {{ formatCurrency(deletingInvestment.amount) }}
+                    </p>
+                    <p class="text-sm text-gray-900">
+                        <strong>Data:</strong> {{ formatDate(deletingInvestment.investment_date) }}
+                    </p>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton type="button" @click="closeDeleteModal">
+                        Cancelar
+                    </SecondaryButton>
+                    <DangerButton
+                        type="button"
+                        @click="confirmDelete"
+                    >
+                        Excluir
+                    </DangerButton>
+                </div>
             </div>
         </Modal>
     </AuthenticatedLayout>

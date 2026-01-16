@@ -333,4 +333,123 @@ class InvestmentControllerTest extends TestCase
             ->where('stats.total_current_month', 1000)
         );
     }
+
+    public function test_usuario_autenticado_atualiza_investimento_com_sucesso(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create(['user_id' => $user->id]);
+        /** @var Asset $asset1 */
+        $asset1 = Asset::factory()->create();
+        /** @var Asset $asset2 */
+        $asset2 = Asset::factory()->create();
+        /** @var Investment $investment */
+        $investment = Investment::factory()->create([
+            'client_id' => $client->id,
+            'asset_id' => $asset1->id,
+            'amount' => 1000.00,
+            'investment_date' => now()->subDay(),
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put("/investments/{$investment->id}", [
+                'client_id' => $client->id,
+                'asset_id' => $asset2->id,
+                'amount' => 2000.00,
+                'investment_date' => now()->subDay()->format('Y-m-d'),
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Investimento atualizado com sucesso!');
+
+        $this->assertDatabaseHas('investments', [
+            'id' => $investment->id,
+            'asset_id' => $asset2->id,
+            'amount' => 2000.00,
+        ]);
+    }
+
+    public function test_usuario_nao_pode_atualizar_investimento_de_outro_consultor(): void
+    {
+        /** @var User $user1 */
+        $user1 = User::factory()->create();
+        /** @var User $user2 */
+        $user2 = User::factory()->create();
+        /** @var Client $client1 */
+        $client1 = Client::factory()->create(['user_id' => $user1->id]);
+        /** @var Client $client2 */
+        $client2 = Client::factory()->create(['user_id' => $user2->id]);
+        /** @var Asset $asset */
+        $asset = Asset::factory()->create();
+        /** @var Investment $investment */
+        $investment = Investment::factory()->create([
+            'client_id' => $client1->id,
+            'asset_id' => $asset->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user2)
+            ->put("/investments/{$investment->id}", [
+                'client_id' => $client2->id,
+                'asset_id' => $asset->id,
+                'amount' => 2000.00,
+                'investment_date' => now()->format('Y-m-d'),
+            ]);
+
+        $response->assertSessionHasErrors('investment');
+    }
+
+    public function test_usuario_autenticado_exclui_investimento_com_sucesso(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create(['user_id' => $user->id]);
+        /** @var Asset $asset */
+        $asset = Asset::factory()->create();
+        /** @var Investment $investment */
+        $investment = Investment::factory()->create([
+            'client_id' => $client->id,
+            'asset_id' => $asset->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->delete("/investments/{$investment->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Investimento excluído com sucesso!');
+
+        $this->assertDatabaseMissing('investments', [
+            'id' => $investment->id,
+        ]);
+    }
+
+    public function test_usuario_nao_pode_excluir_investimento_de_outro_consultor(): void
+    {
+        /** @var User $user1 */
+        $user1 = User::factory()->create();
+        /** @var User $user2 */
+        $user2 = User::factory()->create();
+        /** @var Client $client1 */
+        $client1 = Client::factory()->create(['user_id' => $user1->id]);
+        /** @var Asset $asset */
+        $asset = Asset::factory()->create();
+        /** @var Investment $investment */
+        $investment = Investment::factory()->create([
+            'client_id' => $client1->id,
+            'asset_id' => $asset->id,
+        ]);
+
+        $response = $this
+            ->actingAs($user2)
+            ->delete("/investments/{$investment->id}");
+
+        $response->assertSessionHasErrors('investment');
+        $this->assertDatabaseHas('investments', [
+            'id' => $investment->id,
+        ]);
+    }
 }

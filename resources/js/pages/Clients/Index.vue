@@ -1,7 +1,8 @@
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
+import DangerButton from '@/components/DangerButton.vue';
 import InputError from '@/components/InputError.vue';
 import InputLabel from '@/components/InputLabel.vue';
 import Modal from '@/components/Modal.vue';
@@ -19,8 +20,17 @@ defineProps({
 
 const page = usePage();
 const showModal = ref(false);
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
+const editingClient = ref(null);
+const deletingClient = ref(null);
 
 const form = useForm({
+    name: '',
+    email: '',
+});
+
+const editForm = useForm({
     name: '',
     email: '',
 });
@@ -39,6 +49,51 @@ const closeModal = () => {
     showModal.value = false;
     form.reset();
     form.clearErrors();
+};
+
+const openEditModal = (client) => {
+    editingClient.value = client;
+    editForm.name = client.name;
+    editForm.email = client.email;
+    showEditModal.value = true;
+};
+
+const submitEdit = () => {
+    editForm.put(route('clients.update', editingClient.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            editForm.reset();
+            showEditModal.value = false;
+            editingClient.value = null;
+        },
+    });
+};
+
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editForm.reset();
+    editForm.clearErrors();
+    editingClient.value = null;
+};
+
+const openDeleteModal = (client) => {
+    deletingClient.value = client;
+    showDeleteModal.value = true;
+};
+
+const confirmDelete = () => {
+    router.delete(route('clients.destroy', deletingClient.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDeleteModal.value = false;
+            deletingClient.value = null;
+        },
+    });
+};
+
+const closeDeleteModal = () => {
+    showDeleteModal.value = false;
+    deletingClient.value = null;
 };
 </script>
 
@@ -103,12 +158,26 @@ const closeModal = () => {
                                             {{ client.email }}
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                            <Link
-                                                :href="route('investments.index', { client: client.id })"
-                                                class="text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                Ver Aportes
-                                            </Link>
+                                            <div class="flex items-center justify-end gap-3">
+                                                <Link
+                                                    :href="route('investments.index', { client: client.id })"
+                                                    class="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Ver Aportes
+                                                </Link>
+                                                <button
+                                                    @click="openEditModal(client)"
+                                                    class="text-indigo-600 hover:text-indigo-900"
+                                                >
+                                                    Editar
+                                                </button>
+                                                <button
+                                                    @click="openDeleteModal(client)"
+                                                    class="text-red-600 hover:text-red-900"
+                                                >
+                                                    Excluir
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -178,6 +247,96 @@ const closeModal = () => {
                         </PrimaryButton>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <Modal :show="showEditModal" @close="closeEditModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Editar Cliente
+                </h2>
+
+                <form @submit.prevent="submitEdit" class="mt-6 space-y-6">
+                    <div>
+                        <InputLabel for="edit_name" value="Nome" />
+                        <TextInput
+                            id="edit_name"
+                            v-model="editForm.name"
+                            type="text"
+                            class="mt-1 block w-full"
+                            required
+                            autofocus
+                        />
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.name"
+                        />
+                    </div>
+
+                    <div>
+                        <InputLabel for="edit_email" value="Email" />
+                        <TextInput
+                            id="edit_email"
+                            v-model="editForm.email"
+                            type="email"
+                            class="mt-1 block w-full"
+                            required
+                        />
+                        <InputError
+                            class="mt-2"
+                            :message="editForm.errors.email"
+                        />
+                    </div>
+
+                    <div v-if="editForm.errors.client">
+                        <InputError :message="editForm.errors.client" />
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <SecondaryButton type="button" @click="closeEditModal">
+                            Cancelar
+                        </SecondaryButton>
+                        <PrimaryButton
+                            type="submit"
+                            :disabled="editForm.processing"
+                        >
+                            {{ editForm.processing ? 'Salvando...' : 'Salvar' }}
+                        </PrimaryButton>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <Modal :show="showDeleteModal" @close="closeDeleteModal">
+            <div class="p-6">
+                <h2 class="text-lg font-medium text-gray-900">
+                    Excluir Cliente
+                </h2>
+
+                <p class="mt-4 text-sm text-gray-600">
+                    Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.
+                </p>
+
+                <div v-if="deletingClient" class="mt-4 rounded-md bg-gray-50 p-4">
+                    <p class="text-sm text-gray-900">
+                        <strong>Nome:</strong> {{ deletingClient.name }}
+                    </p>
+                    <p class="text-sm text-gray-900">
+                        <strong>Email:</strong> {{ deletingClient.email }}
+                    </p>
+                </div>
+
+                <div class="mt-6 flex justify-end space-x-3">
+                    <SecondaryButton type="button" @click="closeDeleteModal">
+                        Cancelar
+                    </SecondaryButton>
+                    <DangerButton
+                        type="button"
+                        @click="confirmDelete"
+                    >
+                        Excluir
+                    </DangerButton>
+                </div>
             </div>
         </Modal>
     </AuthenticatedLayout>

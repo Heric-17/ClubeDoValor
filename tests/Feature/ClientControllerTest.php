@@ -270,4 +270,117 @@ class ClientControllerTest extends TestCase
             ->has('clients', 0)
         );
     }
+
+    public function test_usuario_autenticado_atualiza_cliente_com_sucesso(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create([
+            'user_id' => $user->id,
+            'name' => 'João Silva',
+            'email' => 'joao@example.com',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put("/clients/{$client->id}", [
+                'name' => 'João Santos',
+                'email' => 'joao.santos@example.com',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Cliente atualizado com sucesso!');
+
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'name' => 'João Santos',
+            'email' => 'joao.santos@example.com',
+        ]);
+    }
+
+    public function test_usuario_nao_pode_atualizar_cliente_de_outro_consultor(): void
+    {
+        /** @var User $user1 */
+        $user1 = User::factory()->create();
+        /** @var User $user2 */
+        $user2 = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create([
+            'user_id' => $user1->id,
+            'name' => 'Cliente User 1',
+        ]);
+
+        $response = $this
+            ->actingAs($user2)
+            ->put("/clients/{$client->id}", [
+                'name' => 'Cliente Editado',
+                'email' => 'editado@example.com',
+            ]);
+
+        $response->assertSessionHasErrors('client');
+        $this->assertDatabaseHas('clients', [
+            'id' => $client->id,
+            'name' => 'Cliente User 1',
+        ]);
+    }
+
+    public function test_usuario_autenticado_exclui_cliente_com_sucesso(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create(['user_id' => $user->id]);
+
+        $response = $this
+            ->actingAs($user)
+            ->delete("/clients/{$client->id}");
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Cliente excluído com sucesso!');
+
+        $this->assertNotNull($client->fresh()->deleted_at);
+    }
+
+    public function test_usuario_nao_pode_excluir_cliente_de_outro_consultor(): void
+    {
+        /** @var User $user1 */
+        $user1 = User::factory()->create();
+        /** @var User $user2 */
+        $user2 = User::factory()->create();
+        /** @var Client $client */
+        $client = Client::factory()->create(['user_id' => $user1->id]);
+
+        $response = $this
+            ->actingAs($user2)
+            ->delete("/clients/{$client->id}");
+
+        $response->assertSessionHasErrors('client');
+        $this->assertNull($client->fresh()->deleted_at);
+    }
+
+    public function test_validacao_de_email_duplicado_ao_atualizar_cliente(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Client $client1 */
+        $client1 = Client::factory()->create([
+            'user_id' => $user->id,
+            'email' => 'cliente1@example.com',
+        ]);
+        /** @var Client $client2 */
+        $client2 = Client::factory()->create([
+            'user_id' => $user->id,
+            'email' => 'cliente2@example.com',
+        ]);
+
+        $response = $this
+            ->actingAs($user)
+            ->put("/clients/{$client1->id}", [
+                'name' => 'Cliente 1',
+                'email' => 'cliente2@example.com',
+            ]);
+
+        $response->assertSessionHasErrors('client');
+    }
 }

@@ -34,13 +34,31 @@ class InvestmentService
         return $this->repository->getAll();
     }
 
+    public function getInvestmentById(int $id): Investment
+    {
+        return $this->repository->findById($id);
+    }
+
+    public function updateInvestment(int $id, array $data): Investment
+    {
+        // Regra 1: Validar se o valor é positivo
+        if (isset($data['amount']) && $data['amount'] < 0) {
+            throw new \InvalidArgumentException('O valor do investimento não pode ser negativo.');
+        }
+
+        // Regra 2: Validar se a data não é futura
+        if (isset($data['investment_date'])) {
+            $investmentDate = \Carbon\Carbon::parse($data['investment_date']);
+            if ($investmentDate->isFuture()) {
+                throw new \InvalidArgumentException('A data do investimento não pode ser futura.');
+            }
+        }
+
+        return $this->repository->update($id, $data);
+    }
+
     public function deleteInvestment(int $id): bool
     {
-        // TODO: Implement business rules here
-        // Exemplos de validações que podem ser adicionadas:
-        // - Verificar se o investimento pode ser deletado
-        // - Validar permissões do usuário
-        
         return $this->repository->delete($id);
     }
 
@@ -56,37 +74,6 @@ class InvestmentService
 
     public function getInvestmentStats(int $userId, ?int $clientId = null): array
     {
-        $user = \App\Models\User::findOrFail($userId);
-
-        $totalCurrentMonthQuery = $user->investments()
-            ->whereYear('investment_date', now()->year)
-            ->whereMonth('investment_date', now()->month);
-
-        if ($clientId !== null) {
-            $totalCurrentMonthQuery->where('client_id', $clientId);
-        }
-
-        $totalCurrentMonth = $totalCurrentMonthQuery->sum('amount');
-
-        $topAssetQuery = \App\Models\Investment::query()
-            ->join('clients', 'investments.client_id', '=', 'clients.id')
-            ->join('assets', 'investments.asset_id', '=', 'assets.id')
-            ->where('clients.user_id', $userId)
-            ->whereNull('clients.deleted_at');
-
-        if ($clientId !== null) {
-            $topAssetQuery->where('investments.client_id', $clientId);
-        }
-
-        $topAsset = $topAssetQuery
-            ->selectRaw('assets.symbol, SUM(investments.amount) as total_amount')
-            ->groupBy('assets.id', 'assets.symbol')
-            ->orderByDesc('total_amount')
-            ->first();
-
-        return [
-            'total_current_month' => (float) $totalCurrentMonth,
-            'top_asset' => $topAsset?->symbol ?? null,
-        ];
+        return $this->repository->getStats($userId, $clientId);
     }
 }

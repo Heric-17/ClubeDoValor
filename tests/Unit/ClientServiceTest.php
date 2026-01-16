@@ -56,6 +56,12 @@ class ClientServiceTest extends TestCase
             ->andReturn(1);
 
         $repositoryMock
+            ->shouldReceive('emailExistsForUser')
+            ->once()
+            ->with('joao@example.com', 1)
+            ->andReturn(false);
+
+        $repositoryMock
             ->shouldReceive('create')
             ->once()
             ->with($data)

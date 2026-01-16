@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\ClientController;
+use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -14,7 +16,7 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', [\App\Http\Controllers\InvestmentController::class, 'index'])
+Route::get('/dashboard', [InvestmentController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -23,11 +25,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    Route::get('/investments', [\App\Http\Controllers\InvestmentController::class, 'index'])->name('investments.index');
-    Route::post('/investments', [\App\Http\Controllers\InvestmentController::class, 'store'])->name('investments.store');
-    
-    Route::get('/clients', [\App\Http\Controllers\ClientController::class, 'index'])->name('clients.index');
-    Route::post('/clients', [\App\Http\Controllers\ClientController::class, 'store'])->name('clients.store');
+    Route::resource('investments', InvestmentController::class)->except(['show', 'create', 'edit']);
+    Route::resource('clients', ClientController::class)->except(['show', 'create', 'edit']);
 });
 
 require __DIR__.'/auth.php';
