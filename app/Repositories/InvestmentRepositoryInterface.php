@@ -16,5 +16,5 @@ interface InvestmentRepositoryInterface
 
     public function findByClient(int $clientId): Collection;
 
-    public function getByUserId(int $userId, int $perPage = 15): LengthAwarePaginator;
+    public function getByUserId(int $userId, int $perPage = 15, ?int $clientId = null): LengthAwarePaginator;
 }

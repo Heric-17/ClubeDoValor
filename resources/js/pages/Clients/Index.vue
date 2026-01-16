@@ -104,7 +104,7 @@ const closeModal = () => {
                                         </td>
                                         <td class="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <Link
-                                                :href="route('investments.index')"
+                                                :href="route('investments.index', { client: client.id })"
                                                 class="text-indigo-600 hover:text-indigo-900"
                                             >
                                                 Ver Aportes

@@ -96,7 +96,7 @@ class InvestmentServiceTest extends TestCase
         $repositoryMock
             ->shouldReceive('getByUserId')
             ->once()
-            ->with(1, 15)
+            ->with(1, 15, null)
             ->andReturn($paginatorMock);
 
         $result = $service->getInvestmentsByUser(1);
@@ -114,7 +114,7 @@ class InvestmentServiceTest extends TestCase
         $repositoryMock
             ->shouldReceive('getByUserId')
             ->once()
-            ->with(1, 20)
+            ->with(1, 20, null)
             ->andReturn($paginatorMock);
 
         $result = $service->getInvestmentsByUser(1, 20);

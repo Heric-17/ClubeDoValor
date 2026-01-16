@@ -49,25 +49,36 @@ class InvestmentService
         return $this->repository->findByClient($clientId);
     }
 
-    public function getInvestmentsByUser(int $userId, int $perPage = 15): LengthAwarePaginator
+    public function getInvestmentsByUser(int $userId, int $perPage = 15, ?int $clientId = null): LengthAwarePaginator
     {
-        return $this->repository->getByUserId($userId, $perPage);
+        return $this->repository->getByUserId($userId, $perPage, $clientId);
     }
 
-    public function getInvestmentStats(int $userId): array
+    public function getInvestmentStats(int $userId, ?int $clientId = null): array
     {
         $user = \App\Models\User::findOrFail($userId);
 
-        $totalCurrentMonth = $user->investments()
+        $totalCurrentMonthQuery = $user->investments()
             ->whereYear('investment_date', now()->year)
-            ->whereMonth('investment_date', now()->month)
-            ->sum('amount');
+            ->whereMonth('investment_date', now()->month);
 
-        $topAsset = \App\Models\Investment::query()
+        if ($clientId !== null) {
+            $totalCurrentMonthQuery->where('client_id', $clientId);
+        }
+
+        $totalCurrentMonth = $totalCurrentMonthQuery->sum('amount');
+
+        $topAssetQuery = \App\Models\Investment::query()
             ->join('clients', 'investments.client_id', '=', 'clients.id')
             ->join('assets', 'investments.asset_id', '=', 'assets.id')
             ->where('clients.user_id', $userId)
-            ->whereNull('clients.deleted_at')
+            ->whereNull('clients.deleted_at');
+
+        if ($clientId !== null) {
+            $topAssetQuery->where('investments.client_id', $clientId);
+        }
+
+        $topAsset = $topAssetQuery
             ->selectRaw('assets.symbol, SUM(investments.amount) as total_amount')
             ->groupBy('assets.id', 'assets.symbol')
             ->orderByDesc('total_amount')

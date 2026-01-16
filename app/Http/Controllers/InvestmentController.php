@@ -23,8 +23,16 @@ class InvestmentController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $investments = $this->investmentService->getInvestmentsByUser($user->id);
-        $stats = $this->investmentService->getInvestmentStats($user->id);
+        $clientId = request()->query('client');
+
+        $clientIdInt = $clientId ? (int) $clientId : null;
+
+        $investments = $this->investmentService->getInvestmentsByUser(
+            $user->id,
+            15,
+            $clientIdInt
+        );
+        $stats = $this->investmentService->getInvestmentStats($user->id, $clientIdInt);
 
         $clients = Client::where('user_id', $user->id)
             ->select('id', 'name')
@@ -40,6 +48,9 @@ class InvestmentController extends Controller
             'clients' => $clients,
             'assets' => $assets,
             'stats' => $stats,
+            'filters' => [
+                'client' => $clientId,
+            ],
         ]);
     }
 

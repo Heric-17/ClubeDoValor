@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, watch } from 'vue';
 
 import InputError from '@/components/InputError.vue';
@@ -10,7 +10,7 @@ import SecondaryButton from '@/components/SecondaryButton.vue';
 import TextInput from '@/components/TextInput.vue';
 import AuthenticatedLayout from '@/layouts/AuthenticatedLayout.vue';
 
-defineProps({
+const props = defineProps({
     investments: {
         type: Object,
         required: true,
@@ -27,7 +27,13 @@ defineProps({
         type: Object,
         required: true,
     },
+    filters: {
+        type: Object,
+        default: () => ({}),
+    },
 });
+
+const selectedClient = ref(props.filters.client || '');
 
 const page = usePage();
 const showModal = ref(false);
@@ -106,6 +112,15 @@ const closeModal = () => {
     form.clearErrors();
     amountDisplay.value = '';
 };
+
+const filterByClient = () => {
+    router.get(route('investments.index'), {
+        client: selectedClient.value || null,
+    }, {
+        preserveState: true,
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -125,6 +140,31 @@ const closeModal = () => {
 
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                <div class="mb-6 overflow-hidden bg-white shadow-sm sm:rounded-lg">
+                    <div class="p-6">
+                        <div class="flex items-center gap-4">
+                            <div class="flex-1">
+                                <InputLabel for="filter_client" value="Filtrar por Cliente" />
+                                <select
+                                    id="filter_client"
+                                    v-model="selectedClient"
+                                    @change="filterByClient"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                >
+                                    <option value="">Todos os clientes</option>
+                                    <option
+                                        v-for="client in clients"
+                                        :key="client.id"
+                                        :value="client.id"
+                                    >
+                                        {{ client.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="mb-6 grid gap-6 md:grid-cols-2">
                     <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
                         <div class="p-6">

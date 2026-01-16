@@ -37,12 +37,18 @@ class InvestmentRepositoryEloquent implements InvestmentRepositoryInterface
             ->get();
     }
 
-    public function getByUserId(int $userId, int $perPage = 15): LengthAwarePaginator
+    public function getByUserId(int $userId, int $perPage = 15, ?int $clientId = null): LengthAwarePaginator
     {
         $user = User::findOrFail($userId);
 
-        return $user->investments()
-            ->with(['client', 'asset'])
+        $query = $user->investments()
+            ->with(['client', 'asset']);
+
+        if ($clientId !== null) {
+            $query->where('client_id', $clientId);
+        }
+
+        return $query
             ->orderBy('investment_date', 'desc')
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);

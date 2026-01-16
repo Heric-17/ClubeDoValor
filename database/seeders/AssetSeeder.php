@@ -10,8 +10,10 @@ class AssetSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         Asset::query()->delete();
         DB::statement('ALTER TABLE assets AUTO_INCREMENT = 1');
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         $assets = [
             [
